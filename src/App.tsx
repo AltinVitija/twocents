@@ -8,8 +8,50 @@ import { PostDetailScreen } from "./screens/PostDetailScreen";
 import { UserProfileScreen } from "./screens/UserProfileScreen";
 import { RootState } from "./store/index";
 
+const customStyles = `
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+  
+  body {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+  }
+  
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  *::-webkit-scrollbar {
+    display: none;
+  }
+`;
+
 const App: React.FC = () => {
   const currentView = useSelector((state: RootState) => state.app.currentView);
+
+  // Inject custom styles
+  useEffect(() => {
+    const styleElement = document.createElement("style");
+    styleElement.textContent = customStyles;
+    document.head.appendChild(styleElement);
+
+    // Set dark background on body
+    document.body.style.backgroundColor = "#000000";
+    document.body.style.color = "#ffffff";
+
+    return () => {
+      if (document.head.contains(styleElement)) {
+        document.head.removeChild(styleElement);
+      }
+    };
+  }, []);
 
   // Test API connection on app load
   useEffect(() => {
@@ -38,11 +80,10 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-black text-white">
       <Header />
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        {renderCurrentScreen()}
-      </main>
+
+      <main className="animate-fade-in">{renderCurrentScreen()}</main>
     </div>
   );
 };

@@ -9,45 +9,77 @@ export const PollComponent: React.FC<PollComponentProps> = ({ poll }) => {
   const [animated, setAnimated] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setAnimated(true), 100);
+    const timer = setTimeout(() => setAnimated(true), 300);
     return () => clearTimeout(timer);
   }, []);
 
   if (!poll) return null;
 
-  return (
-    <div className="bg-gray-50 rounded-lg p-4 mb-4">
-      <h4 className="font-medium mb-3">{poll.question}</h4>
-      {poll.options.map((option) => {
-        const percentage =
-          poll.total_votes > 0
-            ? (option.vote_count / poll.total_votes) * 100
-            : 0;
+  // Safe number function to prevent NaN
+  const safeNumber = (value: any, defaultValue: number = 0): number => {
+    const num = Number(value);
+    return isNaN(num) || !isFinite(num) ? defaultValue : num;
+  };
 
-        return (
-          <div key={option.id} className="mb-3">
-            <div className="flex justify-between text-sm mb-1">
-              <span className="font-medium">{option.text}</span>
-              <span className="text-gray-600">{Math.round(percentage)}%</span>
+  // Safe random number generator for mock net worth
+  const generateMockNetWorth = (): string => {
+    try {
+      const randomValue = Math.random();
+      const baseAmount = 100000;
+      const multiplier = 1000000;
+
+      const amount = safeNumber(
+        randomValue * multiplier + baseAmount,
+        baseAmount
+      );
+
+      return amount.toLocaleString("en-US", {
+        maximumFractionDigits: 0,
+        minimumFractionDigits: 0,
+      });
+    } catch (error) {
+      return "100,000"; // Fallback value
+    }
+  };
+
+  // Safe total votes calculation
+  const safeTotalVotes = safeNumber(poll.total_votes, 0);
+
+  return (
+    <div className="my-4">
+      <h4 className="text-white text-base font-medium mb-4">
+        {poll.question || "Poll Question"}
+      </h4>
+
+      <div className="bg-gray-900 rounded-lg p-4">
+        <div className="space-y-3">
+          {poll.options?.map((option) => {
+            const safeVoteCount = safeNumber(option.vote_count, 0);
+            const percentage =
+              safeTotalVotes > 0
+                ? safeNumber((safeVoteCount / safeTotalVotes) * 100, 0)
+                : 0;
+
+            return (
+              <div key={option.id || Math.random()} className="relative">
+                <div className="flex items-center justify-between bg-yellow-400 text-black rounded-lg px-4 py-3 font-semibold">
+                  <span className="text-sm">{option.text || "Option"}</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm">{safeVoteCount}</span>
+                    <div className="bg-black text-white px-2 py-1 rounded text-xs font-mono">
+                      $ {generateMockNetWorth()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          }) || (
+            <div className="text-gray-400 text-center py-4">
+              No poll options available
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-3">
-              <div
-                className="bg-blue-500 h-3 rounded-full transition-all duration-1000 ease-out"
-                style={{
-                  width: animated ? `${percentage}%` : "0%",
-                  minWidth: percentage > 0 ? "8px" : "0px",
-                }}
-              />
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              {option.vote_count} votes
-            </div>
-          </div>
-        );
-      })}
-      <p className="text-xs text-gray-500 mt-3 pt-2 border-t border-gray-200">
-        {poll.total_votes} total votes
-      </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

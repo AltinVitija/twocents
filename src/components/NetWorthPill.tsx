@@ -5,6 +5,7 @@ interface NetWorthPillProps {
   username: string;
   onClick?: (e: React.MouseEvent) => void;
   className?: string;
+  size?: "sm" | "md" | "lg";
 }
 
 export const NetWorthPill: React.FC<NetWorthPillProps> = ({
@@ -12,29 +13,101 @@ export const NetWorthPill: React.FC<NetWorthPillProps> = ({
   username,
   onClick,
   className = "",
+  size = "md",
 }) => {
-  const getGradient = (tier: string) => {
-    switch (tier.toLowerCase()) {
-      case "bronze":
-        return "bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-500 hover:to-amber-700";
-      case "silver":
-        return "bg-gradient-to-r from-gray-400 to-gray-600 hover:from-gray-300 hover:to-gray-500";
-      case "gold":
-        return "bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-300 hover:to-yellow-500";
-      case "platinum":
-        return "bg-gradient-to-r from-purple-400 to-purple-600 hover:from-purple-300 hover:to-purple-500";
+  // Safe number function to prevent NaN
+  const safeNumber = (value: any, defaultValue: number = 0): number => {
+    const num = Number(value);
+    return isNaN(num) || !isFinite(num) ? defaultValue : num;
+  };
+
+  // Extract number from username (remove $ and commas for comparison)
+  const getNetWorthValue = (username: string): number => {
+    if (!username || typeof username !== "string") return 0;
+
+    const cleanNum = username.replace(/[$,\s]/g, "");
+    const parsed = parseInt(cleanNum, 10);
+    return safeNumber(parsed, 0);
+  };
+
+  const netWorth = getNetWorthValue(username);
+
+  // Color based on actual net worth amount
+  const getColorClass = () => {
+    if (netWorth >= 10000000) {
+      // 10M+
+      return "bg-orange-400 text-black"; // Gold for highest tier
+    } else if (netWorth >= 1000000) {
+      // 1M+
+      return "bg-yellow-400 text-black";
+    } else if (netWorth >= 100000) {
+      // 100k+
+      return "bg-gray-400 text-black";
+    } else {
+      return "bg-gray-600 text-white"; // Dark gray for lowest
+    }
+  };
+
+  const getSizeClasses = () => {
+    switch (size) {
+      case "sm":
+        return "px-2 py-1 text-xs";
+      case "lg":
+        return "px-4 py-2 text-base";
       default:
-        return "bg-gradient-to-r from-gray-400 to-gray-600 hover:from-gray-300 hover:to-gray-500";
+        return "px-3 py-1.5 text-sm";
+    }
+  };
+
+  // Format the username to ensure it has $ and proper commas
+  const formatUsername = (username: string): string => {
+    if (!username || typeof username !== "string") {
+      return "$ 0";
+    }
+
+    // If username already contains $, extract the number and reformat
+    if (username.includes("$")) {
+      const numPart = username.replace(/[$,\s]/g, "");
+      const parsed = parseInt(numPart, 10);
+      const safeAmount = safeNumber(parsed, 0);
+
+      try {
+        const formatted = safeAmount.toLocaleString("en-US", {
+          maximumFractionDigits: 0,
+          minimumFractionDigits: 0,
+        });
+        return `$ ${formatted}`;
+      } catch (error) {
+        return `$ ${safeAmount}`;
+      }
+    } else {
+      // If no $ in username, try to parse as number
+      const parsed = parseInt(username.replace(/[,\s]/g, ""), 10);
+      const safeAmount = safeNumber(parsed, 0);
+
+      try {
+        const formatted = safeAmount.toLocaleString("en-US", {
+          maximumFractionDigits: 0,
+          minimumFractionDigits: 0,
+        });
+        return `$ ${formatted}`;
+      } catch (error) {
+        return `$ ${safeAmount}`;
+      }
     }
   };
 
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center px-3 py-1 rounded-full text-white text-sm font-medium transition-all hover:scale-105 ${getGradient(
-        tier
-      )} ${className}`}>
-      {username}
+      className={`
+        inline-flex items-center space-x-1 rounded-full font-semibold
+        transition-all duration-200 hover:scale-105
+        ${getColorClass()}
+        ${getSizeClasses()}
+        ${className}
+      `}>
+      <span>{formatUsername(username)}</span>
     </button>
   );
 };
